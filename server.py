@@ -69,7 +69,7 @@ def generate_anthropic(system_prompt, user_prompt):
     }
     
     payload = {
-        "model": "claude-3-haiku-20240307",
+        "model": "claude-4-5-haiku-latest",
         "max_tokens": 1024,
         "system": system_prompt,
         "messages": [
