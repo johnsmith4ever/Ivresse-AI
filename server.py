@@ -8,23 +8,26 @@ import stripe
 app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)
 
-DEEPSEEK_API_KEY = None
+DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
 DEEPSEEK_API_URL = "https://api.deepseek.com/chat/completions"
 
-ANTHROPIC_API_KEY = None
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 
-try:
-    with open(".env.local", "r") as f:
-        for line in f:
-            if line.startswith("DEEPSEEK_API_KEY="):
-                DEEPSEEK_API_KEY = line.strip().split("=")[1]
-            elif line.startswith("ANTHROPIC_API_KEY="):
-                ANTHROPIC_API_KEY = line.strip().split("=")[1]
-            elif line.startswith("STRIPE_SECRET_KEY="):
-                stripe.api_key = line.strip().split("=")[1]
-except Exception as e:
-    print("Error reading .env.local:", e)
+stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
+
+if os.path.exists(".env.local"):
+    try:
+        with open(".env.local", "r") as f:
+            for line in f:
+                if line.startswith("DEEPSEEK_API_KEY=") and not DEEPSEEK_API_KEY:
+                    DEEPSEEK_API_KEY = line.strip().split("=")[1]
+                elif line.startswith("ANTHROPIC_API_KEY=") and not ANTHROPIC_API_KEY:
+                    ANTHROPIC_API_KEY = line.strip().split("=")[1]
+                elif line.startswith("STRIPE_SECRET_KEY=") and not stripe.api_key:
+                    stripe.api_key = line.strip().split("=")[1]
+    except Exception as e:
+        print("Error reading .env.local fallback:", e)
 
 
 def generate_deepseek(system_prompt, user_prompt):
