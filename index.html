@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ivresse AI</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Merriweather:wght@300;400;700;900&display=swap" rel="stylesheet">
+  
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <link rel="stylesheet" href="./index.css?v=6">
+</head>
+<body>
+
+  <div id="loading-overlay">
+    <i class="ph ph-spinner ph-spin"></i>
+  </div>
+
+  <div id="app-container" style="display: none;">
+    <header>
+      <div class="logo">
+        <i class="ph-fill ph-sparkle"></i>
+        <span>Ivresse AI</span>
+      </div>
+      <div style="display: flex; gap: 1rem; align-items: center;">
+        <button id="theme-toggle-btn" class="icon-btn" title="Toggle Light/Dark Mode"><i class="ph ph-sun"></i></button>
+        <div id="user-button-container"></div>
+      </div>
+    </header>
+    
+    <div class="dashboard-layout">
+      <!-- Main Editor -->
+      <main class="dashboard-main">
+        <div class="editor-panel glass-card">
+          
+          <!-- VIEW 1: DRAFT GENERATOR -->
+          <div id="view-1-draft">
+            <div class="editor-tabs">
+              <button class="tab active" data-mode="draft">Draft Email</button>
+              <button class="tab" data-mode="style">Build Style</button>
+              <button class="tab" data-mode="usage">Usage</button>
+            </div>
+
+            <div id="draft-area">
+              <div class="sub-mode-toggle">
+                <button class="sub-tab" data-sub="manual">Email Draft</button>
+                <button class="sub-tab active" data-sub="auto">Auto Reply</button>
+              </div>
+
+              <!-- Global Name Inputs -->
+              <div class="editor-controls" style="margin-bottom: 1.5rem;">
+                <div class="control-group">
+                  <label class="serif-label">Your Name (Signature)</label>
+                  <input type="text" id="your-name-input" placeholder="e.g. John">
+                </div>
+                <div class="control-group">
+                  <label class="serif-label">Recipient's Name</label>
+                  <input type="text" id="recipient-name-input" placeholder="e.g. Mr. Smith">
+                </div>
+              </div>
+
+              <!-- Manual Fields -->
+              <div id="manual-fields" style="display: none;">
+                <div class="editor-controls">
+                  <div class="control-group">
+                    <label class="serif-label">Situation</label>
+                    <select id="situation-select">
+                      <option value="General inquiry">General inquiry</option>
+                      <option value="Asking for help / favor">Asking for help / favor</option>
+                      <option value="Following up after no reply">Following up after no reply</option>
+                      <option value="Requesting an extension">Requesting an extension</option>
+                      <option value="Apologizing for a mistake">Apologizing for a mistake</option>
+                      <option value="Declining an offer">Declining an offer</option>
+                      <option value="Cold outreach">Cold outreach</option>
+                    </select>
+                  </div>
+                  <div class="control-group">
+                    <label class="serif-label">Recipient Relationship</label>
+                    <select id="recipient-select">
+                      <option value="Boss">Boss</option>
+                      <option value="Teacher">Teacher</option>
+                      <option value="Colleague">Colleague</option>
+                      <option value="Friend">Friend</option>
+                      <option value="Customer Services/Support">Customer Services/Support</option>
+                    </select>
+                  </div>
+                  <div class="control-group">
+                    <label class="serif-label">Tone</label>
+                    <select id="tone-select-manual">
+                      <option value="Professional">Professional</option>
+                      <option value="Kind">Kind</option>
+                      <option value="Pushing">Pushing</option>
+                      <option value="Demanding">Demanding</option>
+                      <option value="Casual">Casual</option>
+                      <option value="Apologetic">Apologetic</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="editor-input" style="margin-top: 2rem;">
+                  <label class="serif-label">Brief Description</label>
+                  <textarea id="brief-desc-input" placeholder="e.g. Asking for the Q3 report..."></textarea>
+                </div>
+
+                <div class="editor-input">
+                  <label class="serif-label">Point of the Email</label>
+                  <textarea id="point-input-manual" placeholder="e.g. I need the report by Friday so I can prepare the slides." style="min-height: 80px;"></textarea>
+                </div>
+              </div>
+
+              <!-- Automatic Fields -->
+              <div id="auto-fields">
+                <div class="editor-controls" style="margin-bottom: 1.5rem;">
+                  <div class="control-group">
+                    <label class="serif-label">Tone</label>
+                    <select id="tone-select-auto">
+                      <option value="Professional">Professional</option>
+                      <option value="Kind">Kind</option>
+                      <option value="Pushing">Pushing</option>
+                      <option value="Demanding">Demanding</option>
+                      <option value="Casual">Casual</option>
+                      <option value="Apologetic">Apologetic</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="editor-input">
+                  <label class="serif-label">Previous Email Thread</label>
+                  <textarea id="previous-email-input" placeholder="Paste the email you are replying to here..."></textarea>
+                </div>
+
+                <div class="editor-input">
+                  <label class="serif-label">Point of the Email</label>
+                  <textarea id="point-input-auto" placeholder="e.g. Rejecting the offer because of salary." style="min-height: 80px;"></textarea>
+                </div>
+
+                <div class="editor-input">
+                  <label class="serif-label">Extra details (like excuses etc)</label>
+                  <textarea id="extra-note-input" placeholder="e.g. Tell them my dog ate my calendar." style="min-height: 80px;"></textarea>
+                </div>
+              </div>
+
+              <button id="generate-btn" class="primary-btn">
+                <i class="ph-fill ph-magic-wand"></i> <span id="generate-btn-text">Generate Draft with Deepseek</span>
+              </button>
+            </div>
+
+            <!-- Build Style Area -->
+            <div id="style-area" style="display: none; padding-top: 1rem;">
+              <div class="editor-input" style="margin-bottom: 1.5rem;">
+                <h2 class="serif-label" style="font-size: 1.25rem; color: var(--text-color); margin-top: 0; margin-bottom: 0.5rem;">How should your emails sound?</h2>
+                <p style="font-size: 0.85rem; color: var(--sub-text-color); margin-top: 0; margin-bottom: 1rem;">Define your global writing style rules here. These will be applied to every email you draft.</p>
+                <textarea id="style-input" class="serif-text" style="min-height: 250px;" placeholder="e.g. I prefer short, concise sentences. Do not use emojis. Always sign off with 'Best, Alex'. Avoid overly formal words like 'Henceforth'."></textarea>
+              </div>
+              
+              <button id="save-style-btn" class="primary-btn">
+                <i class="ph-fill ph-floppy-disk"></i> <span id="save-style-btn-text">Save Global Style</span>
+              </button>
+            </div>
+            <!-- Usage Area -->
+            <div id="usage-area" style="display: none; padding-top: 1rem;">
+              <h2 class="serif-label" style="font-size: 1.25rem; color: var(--text-color); margin-top: 0; margin-bottom: 1rem;">Daily Usage Limits</h2>
+              <div class="usage-stats" style="margin-bottom: 2.5rem;">
+                <div class="usage-bar-container">
+                  <div class="usage-label">
+                    <span>Drafts Generated (Deepseek)</span>
+                    <span id="usage-draft-text">0 / 3</span>
+                  </div>
+                  <div class="progress-track"><div id="usage-draft-fill" class="progress-fill"></div></div>
+                </div>
+                <div class="usage-bar-container" style="margin-top: 1rem;">
+                  <div class="usage-label">
+                    <span>Deepseek Pro Polishes</span>
+                    <span id="usage-deepseek-text">0 / 3</span>
+                  </div>
+                  <div class="progress-track"><div id="usage-deepseek-fill" class="progress-fill"></div></div>
+                </div>
+                <div class="usage-bar-container" style="margin-top: 1rem;">
+                  <div class="usage-label">
+                    <span>Final Polishes (Claude Haiku)</span>
+                    <span id="usage-haiku-text">0 / 1</span>
+                  </div>
+                  <div class="progress-track"><div id="usage-haiku-fill" class="progress-fill"></div></div>
+                </div>
+              </div>
+
+              <h2 class="serif-label" style="font-size: 1.25rem; color: var(--text-color);">Upgrade Subscription</h2>
+              <div class="subscription-cards">
+                <div class="sub-card">
+                  <h3>Core Plan <span style="font-size: 0.9rem; color: #a1a1aa; font-weight: normal; margin-left: 0.5rem;">$1.99/mo</span></h3>
+                  <p>15 Drafts/day<br>15 Deepseek Polishes/day<br>5 Claude Polishes/day</p>
+                  <button class="primary-btn sub-checkout-btn" data-price="price_1Tvmw791ej5SdfM2q89RHuFp">Upgrade to Core</button>
+                </div>
+                <div class="sub-card pro-card">
+                  <h3>Pro Plan <span style="font-size: 0.9rem; color: #d8b4fe; font-weight: normal; margin-left: 0.5rem;">$3.99/mo</span></h3>
+                  <p>40 Drafts/day<br>40 Deepseek Polishes/day<br>20 Claude Polishes/day</p>
+                  <button class="primary-btn sub-checkout-btn" data-price="price_1TvmzM91ej5SdfM2s1yonb8n">Upgrade to Pro</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+
+          <!-- VIEW 2: DEEPSEEK PRO POLISH -->
+          <div id="view-2-deepseek" style="display: none;">
+            <div class="view-header">
+              <h2 class="serif-label" style="font-size: 1.25rem; color: var(--text-color); margin: 0;">Step 1: Deepseek Pro Polish</h2>
+              <button class="icon-btn go-back-btn" title="Back to Draft"><i class="ph ph-arrow-left"></i> Back</button>
+            </div>
+            
+            <div class="editor-output" style="margin-top: 1rem;">
+              <textarea id="output-deepseek" class="serif-text"></textarea>
+            </div>
+
+            <div class="editor-input" style="margin-top: 1.5rem;">
+              <label class="serif-label">Notes for Deepseek Pro to Polish</label>
+              <textarea id="deepseek-note-input" placeholder="e.g. Make it sound slightly more urgent, but keep it polite." style="min-height: 80px;"></textarea>
+            </div>
+
+            <div class="output-actions" style="margin-top: 1rem; flex-wrap: wrap;">
+              <button id="polish-deepseek-btn" class="primary-btn"><i class="ph-fill ph-sparkle"></i> <span id="polish-deepseek-btn-text">Polish with Deepseek Pro</span></button>
+              <div style="flex: 1;"></div>
+              <button class="secondary-btn copy-btn" data-target="output-deepseek"><i class="ph ph-copy"></i> Copy</button>
+              <button class="secondary-btn gmail-btn" data-target="output-deepseek"><i class="ph-fill ph-envelope"></i> Gmail</button>
+              <button class="secondary-btn outlook-btn" data-target="output-deepseek"><i class="ph-fill ph-microsoft-outlook-logo"></i> Outlook</button>
+            </div>
+            
+            <div style="text-align: right; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+              <button id="next-to-claude-btn" class="secondary-btn" style="color: #60a5fa; border-color: rgba(96, 165, 250, 0.3);">Proceed to Final Polish (Claude) <i class="ph ph-arrow-right"></i></button>
+            </div>
+          </div>
+
+
+          <!-- VIEW 3: CLAUDE HAIKU POLISH -->
+          <div id="view-3-claude" style="display: none;">
+            <div class="view-header">
+              <h2 class="serif-label" style="font-size: 1.25rem; color: var(--text-color); margin: 0;">Step 2: Final Polish with Claude Haiku</h2>
+              <button class="icon-btn go-back-btn" title="Back to Step 1"><i class="ph ph-arrow-left"></i> Back</button>
+            </div>
+            
+            <div class="editor-output" style="margin-top: 1rem;">
+              <textarea id="output-claude" class="serif-text"></textarea>
+            </div>
+
+            <div class="editor-input" style="margin-top: 1.5rem;">
+              <label class="serif-label">Notes for Claude to Polish (Optional)</label>
+              <textarea id="claude-note-input" placeholder="e.g. Please make the tone slightly more casual..." style="min-height: 80px;"></textarea>
+            </div>
+
+            <div class="output-actions" style="margin-top: 1.5rem; flex-wrap: wrap;">
+              <button id="polish-claude-btn" class="primary-btn" style="background: #d97757;"><i class="ph-fill ph-magic-wand"></i> <span id="polish-claude-btn-text">Final Polish (Claude Haiku)</span></button>
+              <div style="flex: 1;"></div>
+              <button class="secondary-btn copy-btn" data-target="output-claude"><i class="ph ph-copy"></i> Copy</button>
+              <button class="secondary-btn gmail-btn" data-target="output-claude"><i class="ph-fill ph-envelope"></i> Gmail</button>
+              <button class="secondary-btn outlook-btn" data-target="output-claude"><i class="ph-fill ph-microsoft-outlook-logo"></i> Outlook</button>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="./app.js?v=6"></script>
+</body>
+</html>
