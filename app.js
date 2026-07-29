@@ -10,6 +10,21 @@ const MAX_DRAFTS = 3;
 const MAX_HAIKU = 1;
 const MAX_DEEPSEEK_POLISH = 3;
 
+// ── Supabase ──────────────────────────────────────────────────────────────────
+const SUPABASE_URL = "https://istizzojkchvwbxnoivy.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzdGl6em9qa2NodndieG5vaXZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1NjY5OTYsImV4cCI6MjEwMDE0Mjk5Nn0.driL6QhosL1yD8gTyPaHM-9j7cbPzuzAujSk__7qyGc";
+// Initialized once the CDN script has loaded (supabase is exposed globally via UMD bundle)
+let supabase = null;
+
+function initSupabase() {
+  if (window.supabase && window.supabase.createClient) {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  } else {
+    console.error("[Supabase] CDN script not loaded — cross-device sync disabled.");
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 function getStorageKey(type) {
   return `ivresse_${userId}_${type}`;
 }
@@ -35,7 +50,97 @@ function getUsage() {
 function saveUsage(usage) {
   localStorage.setItem(getStorageKey('usage'), JSON.stringify(usage));
   updateUsageUI();
+  // Fire-and-forget remote sync — errors are caught internally
+  syncUsageToSupabase(usage);
 }
+
+// ── Supabase Sync Functions ───────────────────────────────────────────────────
+
+/**
+ * On login: fetch the user's usage row from Supabase.
+ * If found, overwrite localStorage with the remote values so usage is
+ * consistent across devices. If the row's last_reset date is not today,
+ * the counts are reset to 0 and the remote row is updated immediately.
+ */
+async function loadUsageFromSupabase() {
+  if (!supabase) return; // CDN not loaded — fall back to localStorage only
+  if (!userId) return;   // Clerk not ready yet
+
+  try {
+    const { data, error } = await supabase
+      .from('ivresse_usage')
+      .select('drafts, deepseek_polishes, haikus, last_reset')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[Supabase] loadUsageFromSupabase SELECT failed:', error);
+      return;
+    }
+
+    const today = getTodayString();
+
+    if (!data) {
+      // No row yet — the first saveUsage() call will create it via UPSERT
+      console.log('[Supabase] No usage row found for user — will create on first use.');
+      return;
+    }
+
+    let { drafts, deepseek_polishes, haikus, last_reset } = data;
+
+    // If last_reset is a past date, reset counts and persist immediately
+    if (last_reset !== today) {
+      drafts = 0;
+      deepseek_polishes = 0;
+      haikus = 0;
+      await syncUsageToSupabase({ date: today, drafts, deepseekPolishes: deepseek_polishes, haikus });
+    }
+
+    // Overwrite localStorage with the authoritative remote values
+    const usage = {
+      date: today,
+      drafts,
+      deepseekPolishes: deepseek_polishes,
+      haikus
+    };
+    localStorage.setItem(getStorageKey('usage'), JSON.stringify(usage));
+    updateUsageUI();
+    console.log('[Supabase] Usage loaded from remote:', usage);
+
+  } catch (err) {
+    console.error('[Supabase] loadUsageFromSupabase unexpected error:', err);
+  }
+}
+
+/**
+ * UPSERT the current usage counts to the user_usage table.
+ * Called every time credits/tokens are deducted.
+ */
+async function syncUsageToSupabase(usage) {
+  if (!supabase) return;
+  if (!userId) return;
+
+  try {
+    const { error } = await supabase
+      .from('ivresse_usage')
+      .upsert({
+        user_id: userId,
+        drafts: usage.drafts,
+        deepseek_polishes: usage.deepseekPolishes,
+        haikus: usage.haikus,
+        last_reset: usage.date,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id' });
+
+    if (error) {
+      console.error('[Supabase] syncUsageToSupabase UPSERT failed:', error);
+    }
+  } catch (err) {
+    console.error('[Supabase] syncUsageToSupabase unexpected error:', err);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 function updateUsageUI() {
   const usage = getUsage();
@@ -458,6 +563,11 @@ function initializeClerk() {
       } else {
         userId = clerk.user.id;
         document.getElementById("app-container").style.display = "flex";
+
+        // Initialize Supabase now that we have a userId
+        initSupabase();
+        // Fetch remote usage and overwrite localStorage (cross-device sync)
+        loadUsageFromSupabase();
         
         const clerkAppearance = {
           elements: {
