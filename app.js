@@ -14,11 +14,11 @@ const MAX_DEEPSEEK_POLISH = 3;
 const SUPABASE_URL = "https://istizzojkchvwbxnoivy.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzdGl6em9qa2NodndieG5vaXZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1NjY5OTYsImV4cCI6MjEwMDE0Mjk5Nn0.driL6QhosL1yD8gTyPaHM-9j7cbPzuzAujSk__7qyGc";
 // Initialized once the CDN script has loaded (supabase is exposed globally via UMD bundle)
-let supabase = null;
+let _supabaseClient = null;
 
 function initSupabase() {
   if (window.supabase && window.supabase.createClient) {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    _supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   } else {
     console.error("[Supabase] CDN script not loaded — cross-device sync disabled.");
   }
@@ -63,11 +63,11 @@ function saveUsage(usage) {
  * the counts are reset to 0 and the remote row is updated immediately.
  */
 async function loadUsageFromSupabase() {
-  if (!supabase) return; // CDN not loaded — fall back to localStorage only
-  if (!userId) return;   // Clerk not ready yet
+  if (!_supabaseClient) return; // CDN not loaded — fall back to localStorage only
+  if (!userId) return;          // Clerk not ready yet
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await _supabaseClient
       .from('ivresse_usage')
       .select('drafts, deepseek_polishes, haikus, last_reset')
       .eq('user_id', userId)
@@ -117,11 +117,11 @@ async function loadUsageFromSupabase() {
  * Called every time credits/tokens are deducted.
  */
 async function syncUsageToSupabase(usage) {
-  if (!supabase) return;
+  if (!_supabaseClient) return;
   if (!userId) return;
 
   try {
-    const { error } = await supabase
+    const { error } = await _supabaseClient
       .from('ivresse_usage')
       .upsert({
         user_id: userId,
